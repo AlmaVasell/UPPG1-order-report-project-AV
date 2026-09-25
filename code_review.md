@@ -1,60 +1,25 @@
-# Code Review – Originalkoden
+1. Hela programmet ligger i en fil
+I originalkoden ligger nästan all logik samlad i order_report.py. Filen ansvarar för allt från att läsa in CSV-filer och validera data till att bearbeta information och spara rapporter. Detta gör att programmets olika delar blir tätt sammankopplade, vilket försvårar både förståelsen av koden och möjligheten att testa och återanvända den.
+För att förbättra strukturen bör programmet delas upp i mindre moduler med tydliga ansvarsområden, exempelvis loading.py, validation.py, processing.py och reporting.py. På så sätt blir koden mer organiserad och enklare att underhålla.
 
-## 1. Hela programmet ligger i en fil
+2. Programmet använder print() för körinformation
+Programmet använder print() för att skriva ut statusmeddelanden, exempelvis "Startar orderrapport" och "Sparade overview.csv". Problemet med detta är att det blir svårt att skilja mellan vanlig information, varningar och faktiska fel.
+En bättre lösning är att använda Pythons inbyggda modul logging och konfigurera loggningen centralt. Det ger en tydligare överblick över programmets körning och gör det enklare att felsöka när något går fel.
 
-**Observation:** Nästan all logik ligger direkt i `order_report.py`. Filen läser CSV, validerar data, bearbetar information och sparar rapporter.
+3. För bred felhantering
+I originalkoden används except Exception, vilket innebär att många olika typer av fel fångas upp på samma sätt. Det kan göra felsökningen svårare eftersom det inte alltid framgår vad som faktiskt orsakat problemet.
+För att förbättra felhanteringen bör mer specifika undantag användas, exempelvis FileNotFoundError, ValueError och KeyError, beroende på vilken typ av fel som kan uppstå. Det gör felhanteringen tydligare och underlättar felsökningen.
 
-**Konsekvens:** Koden blir svår att förstå, återanvända och testa eftersom alla delar är ihopkopplade.
+4. Duplicerad kod i rapporterna
+Koden som skapar rapporter per produktkategori och region är nästan identisk och bygger på liknande groupby-logik. Det innebär att samma typ av beräkning upprepas på flera ställen i programmet.
+Om beräkningarna behöver ändras måste ändringarna därför göras på flera ställen, vilket ökar risken för misstag. Genom att skapa gemensamma och återanvändbara funktioner kan samma logik användas för olika rapporttyper. Det minskar mängden duplicerad kod och gör programmet enklare att vidareutveckla.
 
-**Förslag:** Dela upp programmet i moduler med tydliga ansvarsområden, exempelvis `loading.py`, `validation.py`, `processing.py` och `reporting.py`.
+5. Ingen tydlig startpunkt
+Programmet saknar en tydlig startpunkt eftersom koden körs direkt när filen startas. Det kan skapa problem om filen importeras i ett test eller används av en annan modul, eftersom hela programmet då körs automatiskt.
+För att undvika detta bör programmets huvudsakliga körning flyttas till en main()-funktion och startas med:
+if __name__ == "__main__":
+    main()
 
----
-
-## 2. Programmet använder `print()` för körinformation
-
-**Observation:** Statusmeddelanden som "Startar orderrapport" och "Sparade overview.csv" skrivs ut med `print()`.
-
-**Konsekvens:** Det blir svårt att skilja mellan vanlig information, varningar och fel.
-
-**Förslag:** Ersätt `print()` med Python-modulen `logging` och konfigurera loggningen centralt.
-
----
-
-## 3. För bred felhantering
-
-**Observation:** Programmet använder `except Exception`.
-
-**Konsekvens:** Alla typer av fel fångas på samma sätt, vilket gör det svårare att förstå vad som faktiskt gick fel.
-
-**Förslag:** Fånga specifika fel, exempelvis `FileNotFoundError`, `ValueError` eller `KeyError`, där det passar.
-
----
-
-## 4. Duplicerad kod i rapporterna
-
-**Observation:** Koden som skapar rapporter per produktkategori och per region är nästan identisk och använder liknande `groupby`-logik.
-
-**Konsekvens:** Om beräkningen behöver ändras måste samma ändring göras på flera ställen.
-
-**Förslag:** Skapa återanvändbara funktioner som kan användas för flera typer av rapporter.
-
----
-
-## 5. Ingen tydlig startpunkt
-
-**Observation:** Koden körs direkt när filen startas.
-
-**Konsekvens:** Om filen importeras i ett test eller i en annan modul körs hela programmet direkt.
-
-**Förslag:** Flytta programmets körning till en `main()`-funktion och använd `if __name__ == "__main__":`.
-
----
-
-## 6. Begränsad validering av data
-
-**Observation:** Programmet kontrollerar om obligatoriska kolumner finns, men valideringen ligger tillsammans med resten av programmet och felmeddelandet är bara "Fel data".
-
-**Konsekvens:** Det blir svårt att förstå vad som är fel med datan och valideringen blir svårare att testa separat.
-
-**Förslag:** Flytta valideringen till en egen modul och ge tydligare felmeddelanden. Kontrollera till exempel om datan är tom och vilka obligatoriska kolumner som saknas.
-
+6. Begränsad validering av data
+Originalkoden kontrollerar om de obligatoriska kolumnerna finns, men valideringen ligger tillsammans med resten av programlogiken. Dessutom används det generella felmeddelandet "Fel data", vilket gör det svårt att förstå vad som faktiskt är fel med indata.
+Valideringen bör därför flyttas till en separat modul där den kan testas oberoende av resten av programmet. Det är också bra att lägga till fler kontroller, exempelvis om datan är tom eller om obligatoriska kolumner saknas. Genom att ge tydligare felmeddelanden blir det enklare att identifiera och åtgärda problem med datan.
